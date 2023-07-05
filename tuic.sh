@@ -5,7 +5,7 @@ gray='\e[90m'
 green='\e[92m'
 plain='\e[0m'
 white='\e[37m'
-magenta='\e[95m'
+magenta='\e[35m'
 cyan='\e[96m'
 blue='\e[94m'
 none='\e[0m'
@@ -16,17 +16,13 @@ yellow='\e[33m'
 pink='\e[95m'
 orange='\e[38;5;208m'
 purple='\e[35m'
-light_purple='\e[95m'
 light_orange='\e[38;5;214m'
 light_gray='\e[37m'
 dark_gray='\e[90m'
 light_red='\e[91m'
 light_green='\e[92m'
 light_yellow='\e[93m'
-light_blue='\e[94m'
 light_magenta='\e[95m'
-light_cyan='\e[96m'
-light_pink='\e[91;95m'
 
 error() {
     echo -e "$red$bold$1$plain"
@@ -351,7 +347,8 @@ install() {
 
 menu() {
   echo -e "${light_pink} Yo, Anya's auto Tuic in the house! ${plain}"
-  PS3="$(echo -e "Pick your vibe [${light_cyan}1-5$]: ")"
+  echo ""
+  PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
   options=("Install" "Start" "Stop" "Uninstall" "Bounce")
   select option in "${options[@]}"; do
     case $REPLY in
@@ -363,6 +360,5 @@ menu() {
     esac
   done
 }
-
-
+# Usage
 menu
