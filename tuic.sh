@@ -350,7 +350,7 @@ install() {
 }
 
 menu() {
-  echo -e "${light_pink} Yo, Anya's auto Tuic in the house! "
+  echo -e "${light_pink} Yo, Anya's auto Tuic in the house! ${plain}"
   PS3="$(echo -e "Pick your vibe [${light_cyan}1-5$]: ")"
   options=("Install" "Start" "Stop" "Uninstall" "Bounce")
   select option in "${options[@]}"; do
@@ -363,5 +363,6 @@ menu() {
     esac
   done
 }
+
 
 menu
