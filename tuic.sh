@@ -346,7 +346,7 @@ install() {
 }
 
 menu() {
-  echo -e "${light_pink} Yo, Anya's auto Tuic in the house! ${plain}"
+  echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
   echo ""
   PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
   options=("Install" "Start" "Stop" "Uninstall" "Bounce")
