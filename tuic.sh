@@ -40,17 +40,18 @@ highlight() {
     echo -e "$magenta$bold$blink$1$plain"
 }
 
-# root
-[[ $EUID != 0 ]] && error "抱歉,此操作需要 ${yellow}ROOT用户.${none} 权限" && exit 1
+# Yo, we need root access for this, no exceptions!
+[[ $EUID != 0 ]] && echo "Sorry, this gig needs ${yellow}ROOT access.${none} You feel me?" && exit 1
 
-# yum or apt-get, ubuntu/debian/centos
+# We're talking yum or apt-get here, so Ubuntu/Debian/CentOS only
 cmd=$(type -P apt-get || type -P yum)
-[[ ! $cmd ]] && error "此脚本仅支持 ${yellow}(Ubuntu or Debian or CentOS)${none}." && exit 1
+[[ ! $cmd ]] && echo "This script is only vibing with ${yellow}(Ubuntu or Debian or CentOS)${none}, ya dig?" && exit 1
 
-# systemd
+# We gotta have systemd
 [[ ! $(type -P systemctl) ]] && {
-    error "此系统缺少 ${yellow}(systemctl)${none}, 请尝试执行:${yellow} ${cmd} update -y;${cmd} install systemd -y ${none}来修复此错误." && exit 1
+    echo "Your system's missing ${yellow}(systemctl)${none}, try running: ${yellow} ${cmd} update -y;${cmd} install systemd -y ${none} to fix this mess." && exit 1
 }
+
 
 ##
 workspace="/opt/tuic"
@@ -59,21 +60,22 @@ netpkg="wget unzip jq net-tools socat curl cron"
 fullchain="/root/cert/cert.crt"
 private_key="/root/cert/private.key"
 
+# Aight, this is Anya's code that peeps if everything's cool, then asks if you're ready to dip or slide back to the main menu.
+# Yo, this is Anya's script that checks if things went smooth, and then asks if you wanna bounce or roll back to the main menu.
 back2menu() {
     if [[ $? -eq 0 ]]; then
-        success "运行成功"
+        echo "Boom! That worked like a charm."
     else
-        error "运行失败"
+        echo "Uh-oh! Something went sideways."
     fi
-    read -rp "Enter 'y' to exit, or any key to return to the main menu: " back2menuInput
+    read -rp "Hit 'y' to bounce, or any key to roll back to the main menu: " back2menuInput
     case "$back2menuInput" in
         y) exit 1 ;;
         *) menu ;;
     esac
 }
 
-
-# install dependent pkg
+# Yo, we gotta make sure we got all the stuff we need
 install_pkg() {
     missing_packages=()
     for package in $*; do
@@ -82,7 +84,7 @@ install_pkg() {
         fi
     done
     if [[ ${#missing_packages[@]} -gt 0 ]]; then
-        warning "安装依赖包 >${missing_packages[*]}"
+        echo "Hold up, we gotta install some stuff first >${missing_packages[*]}"
         $cmd install -y ${missing_packages[*]} &>/dev/null
         if [[ $? != 0 ]]; then
             [[ $cmd =~ yum ]] && yum install epel-release -y &>/dev/null
@@ -92,12 +94,13 @@ install_pkg() {
     fi
 }
 
+# Let's check if port 80 is free
 check_80() {
     if netstat -tuln | grep -q ":80 "; then
-        error "80端口已被以下程序占用"
+        echo "Whoa! Port 80 is already taken by the following:"
         netstat -tuln | awk '/:80 / {print $7}' | cut -d '/' -f1 | xargs kill -9
     else
-        success "80端口当前可用"
+        echo "Sweet! Port 80 is all yours."
     fi
 }
 
@@ -124,40 +127,40 @@ find_unused_port() {
 }
 
 cert_update() {
-    warning "正在为阁下续期证书"
+    echo "Hold up, we're renewing your certificate."
     ~/.acme.sh/acme.sh --issue -d $1 --standalone --keylength ec-256 --server letsencrypt
     ~/.acme.sh/acme.sh --install-cert -d $1 --ecc --fullchain-file ${workspace}/fullchain.pem --key-file ${workspace}/private_key.pem --reloadcmd "systemctl restart tuic.service"
-    warning "证书已生成在 ${workspace}"
-    # 检查证书是否需要更新，并在需要时自动更新
+    echo "Your certificate is chillin' at ${workspace}"
+    # Check if the certificate needs to be updated and do it automatically if needed
     ~/.acme.sh/acme.sh --cron --domain $1
-    crontab -l | grep -q "$1" && warning "已存在$1的证书自动续期任务" ||
-    { crontab -l > conf_temp && echo "0 0 * */2 * ~/.acme.sh/acme.sh --cron --domain $1" >> conf_temp && crontab conf_temp && rm -f conf_temp && warning "已添加$1的证书自动续期任务"; }
+    crontab -l | grep -q "$1" && echo "You've already got an auto-renewal job for $1's certificate" ||
+    { crontab -l > conf_temp && echo "0 0 * */2 * ~/.acme.sh/acme.sh --cron --domain $1" >> conf_temp && crontab conf_temp && rm -f conf_temp && echo "Added an auto-renewal job for $1's certificate"; }
 }
 
 apply_cert() {
-    # 检查 acme.sh 是否已经安装
+    # Check if acme.sh is installed
     [ ! -f "/root/.acme.sh/acme.sh" ] && curl https://get.acme.sh | sh
-    warning "正在为阁下申请证书"
-    # 创建存储证书的目录
+    echo "We're getting your certificate."
+    # Create a directory to store the certificate
     mkdir -p /etc/ssl/private
     # ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
     ~/.acme.sh/acme.sh --issue --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
     ~/.acme.sh/acme.sh --install-cert -d $1 --ecc --fullchain-file ${workspace}/fullchain.pem --key-file ${workspace}/private_key.pem --reloadcmd "systemctl restart tuic.service"
-    [ $? -ne 0 ] && { error "证书申请失败" && exit 1; }
+    [ $? -ne 0 ] && { echo "Dang, couldn't get the certificate." && exit 1; }
 }
 
 check_cert() {
     if ~/.acme.sh/acme.sh --list | grep -q $1; then
-        read -rp "是否撤销已有证书？(留空则忽略)：" del_cert
+        read -rp "Wanna revoke the existing certificate? (Leave it blank to ignore): " del_cert
         if [[ ${del_cert} == [yY] ]]; then
-            warning "正在撤销$1的证书..."
+            echo "Revoking $1's certificate..."
             ~/.acme.sh/acme.sh --revoke -d $1 --ecc
-            ~/.acme.sh/acme.sh --remove -d $1 --ecc  # 删除证书文件
-            rm -f ~/.acme.sh/${1}_ecc/${1}.key  # 删除密钥文件
+            ~/.acme.sh/acme.sh --remove -d $1 --ecc  # Delete the certificate file
+            rm -f ~/.acme.sh/${1}_ecc/${1}.key  # Delete the key file
             rm -f ${workspace}/fullchain.pem ; rm -f ${workspace}/private_key.pem
             apply_cert $1
         else 
-            info "将为阁下使用已有证书"
+            echo "We're gonna use the existing certificate for you."
             cert_update $1
         fi
     else
@@ -183,34 +186,34 @@ create_systemd() {
     [Install]
     WantedBy=multi-user.target
 EOF
-    success "已为阁下添加${service}"
+    echo "Got your service ${service} all set up."
     systemctl daemon-reload
 }
 
 create_conf() {
 
-    read -rp "请提供域名：" domain_input
-    [[ -z ${domain_input} ]] && error "抱歉，域名不能为空" && exit 1
+    read -rp "Drop your domain name here: " domain_input
+    [[ -z ${domain_input} ]] && echo "Can't leave the domain name empty, bro." && exit 1
 
-    read -rp "请自定义证书路径(留空则忽略)：" is_self_cert
+    read -rp "Wanna customize the certificate path? (Leave it blank to ignore): " is_self_cert
     if [[ ${is_self_cert} == [yY] ]]; then
-        read -rp "请提供证书路径：" cert_full_path
-        [[ ! -e ${cert_full_path} ]] && error "抱歉，证书文件${cert_full_path}不存在" && exit 1
-        read -rp "请提供秘钥路径：" key_full_path
-        [[ ! -e ${key_full_path} ]] && error "抱歉，秘钥文件${key_full_path}不存在" && exit 1
+        read -rp "Drop your certificate path here: " cert_full_path
+        [[ ! -e ${cert_full_path} ]] && echo "Can't find the certificate file ${cert_full_path}, bro." && exit 1
+        read -rp "Drop your key path here: " key_full_path
+        [[ ! -e ${key_full_path} ]] && echo "Can't find the key file ${key_full_path}, bro." && exit 1
     else
         check_80
         check_cert $domain_input
     fi
 
-    read -rp "请分配端口(留空则随机)：" port_input
-    [[ -z ${port_input} ]] && port_input=$(find_unused_port) && warning "已为阁下分配随机端口: $port_input"
+    read -rp "Assign a port (Leave it blank for a random one): " port_input
+    [[ -z ${port_input} ]] && port_input=$(find_unused_port) && echo "Assigned a random port for you: $port_input"
 
-    read -rp "请输入UUID(留空则随机)：" uuid_input
-    [[ -z ${uuid_input} ]] && uuid_input=$(generate_random_uuid) && warning "已为阁下生成随机UUID: $uuid_input"
+    read -rp "Drop your UUID here (Leave it blank for a random one): " uuid_input
+    [[ -z ${uuid_input} ]] && uuid_input=$(generate_random_uuid) && echo "Generated a random UUID for you: $uuid_input"
 
-    read -rp "请输入密码(留空则随机)：" password_input
-    [[ -z ${password_input} ]] && password_input=$(generate_random_password 16) && warning "已为阁下生成随机密码: $password_input"
+    read -rp "Drop your password here (Leave it blank for a random one): " password_input
+    [[ -z ${password_input} ]] && password_input=$(generate_random_password 16) && echo "Generated a random password for you: $password_input"
 
     cat > config.json << EOF
     {
@@ -232,54 +235,48 @@ create_conf() {
         "log_level": "WARN"
     }
 EOF
-    read -rp "是否启用证书指纹(输入y启用，其他则忽略)：" not_fingerprint
+    read -rp "Wanna enable certificate fingerprint? (Enter 'y' to enable, or ignore): " not_fingerprint
     if [[ ${not_fingerprint} == [yY] ]]; then
         fingerprint=$(openssl x509 -noout -fingerprint -sha256 -inform pem -in "${workspace}/fullchain.pem" | cut -d '=' -f 2)
-        [[ -n ${fingerprint} ]] && warning "已添加证书指纹" && echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, fingerprint=${fingerprint}, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt || { error "证书指纹生成失败，请检查证书有效性" && exit 1; }
+        [[ -n ${fingerprint} ]] && echo "Added the certificate fingerprint for you." && echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, fingerprint=${fingerprint}, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt || { echo "Couldn't generate the certificate fingerprint. Check if the certificate is valid, bro." && exit 1; }
     else 
         echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt
     fi
 }
 
 uninstall() {
-    systemctl stop tuic && \
-    systemctl disable --now tuic.service && \
-    rm -rf ${workspace} && rm -rf ${service} 
-    error "Tuic 已停止并卸载"
+    systemctl stop tuic
+    systemctl disable --now tuic.service
+    rm -rf ${workspace} ${service}
+    echo "Tuic's kicked out, bro."
 }
 
 run() {
     if [[ ! -e "$service" ]]; then
-    error "Tuic 未安装" ; back2menu
+    echo "Tuic ain't installed yet, bro." ; back2menu
     fi
 
-    
     systemctl enable --now tuic.service
     if systemctl status tuic | grep -q "active"; then
-        # Beautify the output
-        success "${blue}${bold}-------------- Tuic 已启动 -----------------"
+        echo "${blue}${bold}-------------- Tuic's up and running, bro! -----------------"
         echo ""
-        # Use 'cat' to display the content of the file, and 'sed' to add indentation and color
-        warning "${cyan}${bold}-------------- config ------------------"
+        echo "${cyan}${bold}-------------- Here's your config ------------------"
         while IFS= read -r line
         do
-            # Split the line into key-value pairs
             IFS=', ' read -ra pairs <<< "$line"
             for pair in "${pairs[@]}"; do
                 key=$(echo $pair | cut -d'=' -f1)
                 value=$(echo $pair | cut -d'=' -f2)
                 if [[ "$key" == "tuic" ]]; then
-                    # Only keep the numeric part of the value
                     value=$(echo $value | grep -oP '\d+(\.\d+)*')
                 fi
                 echo -e "${grey}$key${none} = ${magenta}$value${none}"
         done
     done < "${workspace}/client.txt"
-        warning "-------------- shortcuts ------------------"       
+        echo "-------------- Shortcuts ------------------"       
         echo -n "tuic-v5, "
         while IFS= read -r line
         do
-            # Split the line into key-value pairs
             IFS=', ' read -ra pairs <<< "$line"
             for pair in "${pairs[@]}"; do
                 key=$(echo $pair | cut -d'=' -f1)
@@ -292,13 +289,13 @@ run() {
             done
             done < "${workspace}/client.txt" | sed 's/, $//'
         echo ""
-        success "${cyan}${bold}-------------- wakuwaku ------------------"
+        echo "${cyan}${bold}-------------- wakuwaku ------------------"
         echo ""
         return 0
     else
-        error "-------------- Tuic 启动失败 --------------"
+        echo "-------------- Tuic failed to start, bro. --------------"
         echo ""
-        warning "--------------  Err Info  --------------"
+        echo "--------------  Error Error  --------------"
         systemctl status tuic
         return 1
     fi
@@ -306,9 +303,9 @@ run() {
 
 stop() {
     if [[ ! -e "$service" ]]; then
-        error "Tuic 未安装"
+        echo "Tuic ain't installed yet, bro."
     else
-        systemctl stop tuic && info "Tuic 已停止"
+        systemctl stop tuic && echo "Tuic has been stopped, bro."
     fi
     back2menu
 }
@@ -316,7 +313,7 @@ stop() {
 install() {
     ARCH=$(uname -m)
     if [[ -e "$service" ]]; then
-        read -rp "是否重新安装服务(Y/[N])：" input
+        read -rp "Reinstall, y/n? " input
         case "$input" in
             y)  uninstall ;;
             *)  back2menu ;;
@@ -326,8 +323,8 @@ install() {
     fi
     mkdir -p "${workspace}"
     cd "${workspace}" || exit 1
-    info "当前工作目录：$(pwd)"
-    info "下载Tuic文件"
+    echo "We in: $(pwd)"
+    echo "Grabbin' Tuic."
     REPO_URL="https://api.github.com/repos/EAimTY/tuic/releases/latest"
     TAG=$(wget -qO- -t1 -T2 "${REPO_URL}" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
     URL="https://github.com/EAimTY/tuic/releases/download/${TAG}/${TAG}-${ARCH}-unknown-linux-gnu"
@@ -339,15 +336,16 @@ install() {
 }
 
 menu() {
-  PS3="$(echo -e "请选择 [${plain}1-5${blue}]: ")"
-  options=("安装服务" "启动服务" "终止服务" "卸载服务" "退出")
+  echo "${cyan} Yo, Anya's auto Tuic in the house! "
+  PS3="$(echo -e "Pick your vibe [${blue}1-5$]: ")"
+  options=("Install" "Start" "Stop" "Uninstall" "Bounce")
   select option in "${options[@]}"; do
     case $REPLY in
-      1) install ;;
-      2) run ;;
-      3) stop ;;
-      4) uninstall ;;
-      *) exit 1 ;;
+      1) echo "Installin'!" && install ;;
+      2) echo "Startin' up!" && run ;;
+      3) echo "Shuttin' down!" && stop ;;
+      4) echo "Uninstallin'!" && uninstall ;;
+      *) echo "Bouncin'!" && exit 1 ;;
     esac
   done
 }
