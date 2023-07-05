@@ -336,7 +336,7 @@ install() {
 }
 
 menu() {
-  echo "${cyan} Yo, Anya's auto Tuic in the house! "
+  echo -e "${cyan} Yo, Anya's auto Tuic in the house! "
   PS3="$(echo -e "Pick your vibe [${blue}1-5$]: ")"
   options=("Install" "Start" "Stop" "Uninstall" "Bounce")
   select option in "${options[@]}"; do
