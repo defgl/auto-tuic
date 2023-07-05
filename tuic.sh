@@ -13,6 +13,20 @@ underline='\e[4m'
 blink='\e[5m'
 bold='\e[1m'
 yellow='\e[33m'
+pink='\e[95m'
+orange='\e[38;5;208m'
+purple='\e[35m'
+light_purple='\e[95m'
+light_orange='\e[38;5;214m'
+light_gray='\e[37m'
+dark_gray='\e[90m'
+light_red='\e[91m'
+light_green='\e[92m'
+light_yellow='\e[93m'
+light_blue='\e[94m'
+light_magenta='\e[95m'
+light_cyan='\e[96m'
+light_pink='\e[91;95m'
 
 error() {
     echo -e "$red$bold$1$plain"
@@ -289,7 +303,7 @@ run() {
             done
             done < "${workspace}/client.txt" | sed 's/, $//'
         echo ""
-        echo "${cyan}${bold}-------------- wakuwaku ------------------"
+        echo "${dark_gray}${bold}-------------- wakuwaku ------------------"
         echo ""
         return 0
     else
@@ -336,8 +350,8 @@ install() {
 }
 
 menu() {
-  echo -e "${cyan} Yo, Anya's auto Tuic in the house! "
-  PS3="$(echo -e "Pick your vibe [${blue}1-5$]: ")"
+  echo -e "${light_pink} Yo, Anya's auto Tuic in the house! "
+  PS3="$(echo -e "Pick your vibe [${light_cyan}1-5$]: ")"
   options=("Install" "Start" "Stop" "Uninstall" "Bounce")
   select option in "${options[@]}"; do
     case $REPLY in
