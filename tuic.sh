@@ -267,18 +267,35 @@ run() {
         echo -e "${blue}${bold}-------------- Tuic's up and running, bro! -----------------"
         echo ""
         echo -e "${cyan}${bold}-------------- Here's your config ------------------"
-        while IFS= read -r line
-        do
-            IFS=', ' read -ra pairs <<< "$line"
-            for pair in "${pairs[@]}"; do
-                key=$(echo $pair | cut -d'=' -f1)
-                value=$(echo $pair | cut -d'=' -f2)
-                if [[ "$key" == "tuic" ]]; then
-                    value=$(echo $value | grep -oP '\d+(\.\d+)*')
-                fi
-                echo -e "${grey}$key${none} = ${magenta}$value${none}"
-            done
-        done < "${workspace}/client.txt"
+        if [[ -r "${workspace}/client.txt" && -f "${workspace}/client.txt" ]]; then
+            while IFS= read -r line
+            do
+                IFS=', ' read -ra pairs <<< "$line"
+                for pair in "${pairs[@]}"; do
+                    key=$(echo $pair | cut -d'=' -f1)
+                    value=$(echo $pair | cut -d'=' -f2)
+                    if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
+                        echo -n "${value}, "
+                    elif [[ "$key" != "tuic" ]]; then
+                        echo -n "${key}=${value}, "
+                    fi
+                done
+            done < "${workspace}/client.txt"
+        else
+            echo "Error: client.txt file is missing or not readable."
+        fi
+        # while IFS= read -r line
+        # do
+        #     IFS=', ' read -ra pairs <<< "$line"
+        #     for pair in "${pairs[@]}"; do
+        #         key=$(echo $pair | cut -d'=' -f1)
+        #         value=$(echo $pair | cut -d'=' -f2)
+        #         if [[ "$key" == "tuic" ]]; then
+        #             value=$(echo $value | grep -oP '\d+(\.\d+)*')
+        #         fi
+        #         echo -e "${grey}$key${none} = ${magenta}$value${none}"
+        #     done
+        # done < "${workspace}/client.txt"
         echo -e "-------------- All slick and easy, bro! ------------------"   
         echo -n "tuic-v5, "
         while IFS= read -r line
