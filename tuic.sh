@@ -258,54 +258,55 @@ EOF
      rm -rf ${workspace} ${service}
      echo "Tuic's kicked out, bro."
  }
- run() {
-     if [[ ! -e "$service" ]]; then
-     echo "Tuic ain't installed yet, bro." ; back2menu
-     fi
-     systemctl enable --now tuic.service
-     if systemctl status tuic | grep -q "active"; then
-         echo "${blue}${bold}-------------- Tuic's up and running, bro! -----------------"
-         echo ""
-         echo "${cyan}${bold}-------------- Here's your config ------------------"
-         while IFS= read -r line
-         do
-             IFS=', ' read -ra pairs <<< "$line"
-             for pair in "${pairs[@]}"; do
-                 key=$(echo $pair | cut -d'=' -f1)
-                 value=$(echo $pair | cut -d'=' -f2)
-                 if [[ "$key" == "tuic" ]]; then
-                     value=$(echo $value | grep -oP '\d+(\.\d+)*')
-                 fi
-                 echo -e "${grey}$key${none} = ${magenta}$value${none}"
-         done
-     done < "${workspace}/client.txt"
-     echo "-------------- All slick and easy, bro! ------------------"   
-         echo -n "tuic-v5, "
-         while IFS= read -r line
-         do
-             IFS=', ' read -ra pairs <<< "$line"
-             for pair in "${pairs[@]}"; do
-                 key=$(echo $pair | cut -d'=' -f1)
-                 value=$(echo $pair | cut -d'=' -f2)
-                 if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
-                     echo -n "${value}, "
-                 elif [[ "$key" != "tuic" ]]; then
-                     echo -n "${key}=${value}, "
-                 fi
-             done
-             done < "${workspace}/client.txt" | sed 's/, $//'
-         echo ""
-         echo -e "${light_orange}${bold}-------------- wakuwaku ------------------${plain}"            
-         echo ""
-         return 0
-     else
-         echo "-------------- Tuic ain't vibin', bro. --------------"
-         echo ""
-         echo "-------------- We hit a snag! --------------"
-         systemctl status tuic
-         return 1
-     fi
- }
+run() {
+    if [[ ! -e "$service" ]]; then
+        echo "Tuic ain't installed yet, bro." ; back2menu
+    fi
+    systemctl enable --now tuic.service
+    if systemctl status tuic | grep -q "active"; then
+        echo -e "${blue}${bold}-------------- Tuic's up and running, bro! -----------------"
+        echo ""
+        echo -e "${cyan}${bold}-------------- Here's your config ------------------"
+        while IFS= read -r line
+        do
+            IFS=', ' read -ra pairs <<< "$line"
+            for pair in "${pairs[@]}"; do
+                key=$(echo $pair | cut -d'=' -f1)
+                value=$(echo $pair | cut -d'=' -f2)
+                if [[ "$key" == "tuic" ]]; then
+                    value=$(echo $value | grep -oP '\d+(\.\d+)*')
+                fi
+                echo -e "${grey}$key${none} = ${magenta}$value${none}"
+            done
+        done < "${workspace}/client.txt"
+        echo -e "-------------- All slick and easy, bro! ------------------"   
+        echo -n "tuic-v5, "
+        while IFS= read -r line
+        do
+            IFS=', ' read -ra pairs <<< "$line"
+            for pair in "${pairs[@]}"; do
+                key=$(echo $pair | cut -d'=' -f1)
+                value=$(echo $pair | cut -d'=' -f2)
+                if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
+                    echo -n "${value}, "
+                elif [[ "$key" != "tuic" ]]; then
+                    echo -n "${key}=${value}, "
+                fi
+            done
+        done < "${workspace}/client.txt" | sed 's/, $//'
+        echo ""
+        echo -e "${light_orange}${bold}-------------- wakuwaku ------------------${plain}"            
+        echo ""
+        return 0
+    else
+        echo -e "-------------- Tuic ain't vibin', bro. --------------"
+        echo ""
+        echo -e "-------------- We hit a snag! --------------"
+        systemctl status tuic
+        return 1
+    fi
+}
+
  stop() {
      if [[ ! -e "$service" ]]; then
          echo "Tuic ain't installed yet, bro."
@@ -314,24 +315,27 @@ EOF
      fi
      back2menu
  }
- update() {
-     if [[ ! -e "$service" ]]; then
-         echo "Tuic ain't installed yet, bro."
-     else
-         read -rp "Update uuid? (Enter 'y' to update, or ignore): " not_update_uuid
-         [[ ${not_update_uuid} == [yY] ]] && read -rp "Enter new uuid: " uuid_input
-         
-         read -rp "Update password? (Enter 'y' to update, or ignore): " not_update_password
-         [[ ${not_update_password} == [yY] ]] && read -rp "Enter new password: " password_input
-         
-         read -rp "Update port? (Enter 'y' to update, or ignore): " not_update_port
-         [[ ${not_update_port} == [yY] ]] && read -rp "Enter new port: " port_input
-         
-         echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt
-         echo "Tuic's config has been updated, bro."
-     fi
-     back2menu
- }
+
+update() {
+    if [[ ! -e "$service" ]]; then
+        echo "Tuic ain't installed yet, bro."
+    else
+        read -rp "Update uuid? (Enter 'y' to update, or ignore): " not_update_uuid
+        if [[ ${not_update_uuid} == [yY] ]]; then
+            read -rp "Enter new uuid: " uuid_input
+            sed -i "s/\"${uuid_input}\"/\"${uuid_input}\"/g" "${workspace}/config.json"
+            sed -i "s/${uuid_input}/${uuid_input}/g" "${workspace}/client.txt"
+        fi
+
+        read -rp "Update password? (Enter 'y' to update, or ignore): " not_update_password
+        if [[ ${not_update_password} == [yY] ]]; then
+            read -rp "Enter new password: " password_input
+            sed -i "s/\"${password_input}\"/\"${password_input}\"/g" "${workspace}/config.json"
+            sed -i "s/${password_input}/${password_input}/g" "${workspace}/client.txt"
+        fi
+    fi
+}
+
  install() {
      ARCH=$(uname -m)
      if [[ -e "$service" ]]; then
