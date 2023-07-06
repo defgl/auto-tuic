@@ -321,19 +321,18 @@ update() {
         echo "Tuic ain't installed yet, bro."
     else
         read -rp "Update uuid? (Enter 'y' to update, or ignore): " not_update_uuid
-        if [[ ${not_update_uuid} == [yY] ]]; then
-            read -rp "Enter new uuid: " uuid_input
-            sed -i "s/\"${uuid_input}\"/\"${uuid_input}\"/g" "${workspace}/config.json"
-            sed -i "s/${uuid_input}/${uuid_input}/g" "${workspace}/client.txt"
-        fi
-
+        [[ ${not_update_uuid} == [yY] ]] && read -rp "Enter new uuid: " uuid_input
+        
         read -rp "Update password? (Enter 'y' to update, or ignore): " not_update_password
-        if [[ ${not_update_password} == [yY] ]]; then
-            read -rp "Enter new password: " password_input
-            sed -i "s/\"${password_input}\"/\"${password_input}\"/g" "${workspace}/config.json"
-            sed -i "s/${password_input}/${password_input}/g" "${workspace}/client.txt"
-        fi
+        [[ ${not_update_password} == [yY] ]] && read -rp "Enter new password: " password_input
+        
+        read -rp "Update port? (Enter 'y' to update, or ignore): " not_update_port
+        [[ ${not_update_port} == [yY] ]] && read -rp "Enter new port: " port_input
+        
+        echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt
+        echo "Tuic's config has been updated, bro."
     fi
+    back2menu
 }
 
  install() {
