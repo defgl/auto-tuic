@@ -297,7 +297,8 @@ create_conf() {
                             done
                             done < "${workspace}/client.txt" | sed 's/, $//'
                         echo ""
-                        echo -e "${light_orange}${bold}-------------- wakuwaku ------------------${plain}"            echo ""
+                        echo -e "${light_orange}${bold}-------------- wakuwaku ------------------${plain}"            
+                        echo ""
                         return 0
                     else
 
