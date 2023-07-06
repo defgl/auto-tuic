@@ -296,6 +296,7 @@ run() {
         #         echo -e "${grey}$key${none} = ${magenta}$value${none}"
         #     done
         # done < "${workspace}/client.txt"
+        echo ""        
         echo -e "-------------- All slick and easy, bro! ------------------"   
         echo -n "tuic-v5, "
         while IFS= read -r line
