@@ -218,147 +218,147 @@ create_conf() {
 
     read -rp "Assign a port (Leave it blank for a random one): " port_input
     [[ -z ${port_input} ]] && port_input=$(find_unused_port) && echo "Assigned a random port for you: $port_input"
-
     read -rp "Drop your UUID here (Leave it blank for a random one): " uuid_input
-    [[ -z ${uuid_input} ]] && uuid_input=$(generate_random_uuid) && echo "Generated a random UUID for you: $uuid_input"
+        [[ -z ${uuid_input} ]] && uuid_input=$(generate_random_uuid) && echo "Generated a random UUID for you: $uuid_input"
 
-    read -rp "Drop your password here (Leave it blank for a random one): " password_input
-    [[ -z ${password_input} ]] && password_input=$(generate_random_password 16) && echo "Generated a random password for you: $password_input"
+        read -rp "Drop your password here (Leave it blank for a random one): " password_input
+        [[ -z ${password_input} ]] && password_input=$(generate_random_password 16) && echo "Generated a random password for you: $password_input"
 
-    cat > config.json << EOF
-    {
-        "server": "[::]:${port_input}",
-        "users": {
-            "${uuid_input}": "${password_input}"
-        },
-        "certificate": "${workspace}/fullchain.pem",
-        "private_key": "${workspace}/private_key.pem",
-        "congestion_control": "bbr",
-        "alpn": ["h3", "spdy/3.1"],
-        "udp_relay_ipv6": true,
-        "zero_rtt_handshake": false,
-        "auth_timeout": "3s",
-        "max_idle_time": "10s",
-        "max_external_packet_size": 1500,
-        "gc_interval": "3s",
-        "gc_lifetime": "15s",
-        "log_level": "WARN"
+        cat > config.json << EOF
+        {
+            "server": "[::]:${port_input}",
+            "users": {
+                "${uuid_input}": "${password_input}"
+            },
+            "certificate": "${workspace}/fullchain.pem",
+            "private_key": "${workspace}/private_key.pem",
+            "congestion_control": "bbr",
+            "alpn": ["h3", "spdy/3.1"],
+            "udp_relay_ipv6": true,
+            "zero_rtt_handshake": false,
+            "auth_timeout": "3s",
+            "max_idle_time": "10s",
+            "max_external_packet_size": 1500,
+            "gc_interval": "3s",
+            "gc_lifetime": "15s",
+            "log_level": "WARN"
+        }
+    EOF
+        read -rp "Wanna enable certificate fingerprint? (Enter 'y' to enable, or ignore): " not_fingerprint
+        if [[ ${not_fingerprint} == [yY] ]]; then
+            fingerprint=$(openssl x509 -noout -fingerprint -sha256 -inform pem -in "${workspace}/fullchain.pem" | cut -d '=' -f 2)
+            [[ -n ${fingerprint} ]] && echo "Added the certificate fingerprint for you." && echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, fingerprint=${fingerprint}, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt || { echo "Couldn't generate the certificate fingerprint. Check if the certificate is valid, bro." && exit 1; }
+        else 
+            echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt
+        fi
     }
-EOF
-    read -rp "Wanna enable certificate fingerprint? (Enter 'y' to enable, or ignore): " not_fingerprint
-    if [[ ${not_fingerprint} == [yY] ]]; then
-        fingerprint=$(openssl x509 -noout -fingerprint -sha256 -inform pem -in "${workspace}/fullchain.pem" | cut -d '=' -f 2)
-        [[ -n ${fingerprint} ]] && echo "Added the certificate fingerprint for you." && echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, fingerprint=${fingerprint}, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt || { echo "Couldn't generate the certificate fingerprint. Check if the certificate is valid, bro." && exit 1; }
-    else 
-        echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt
-    fi
-}
 
-uninstall() {
-    systemctl stop tuic
-    systemctl disable --now tuic.service
-    rm -rf ${workspace} ${service}
-    echo "Tuic's kicked out, bro."
-}
+    uninstall() {
+        systemctl stop tuic
+        systemctl disable --now tuic.service
+        rm -rf ${workspace} ${service}
+        echo "Tuic's kicked out, bro."
+    }
 
-run() {
-    if [[ ! -e "$service" ]]; then
-    echo "Tuic ain't installed yet, bro." ; back2menu
-    fi
+    run() {
+        if [[ ! -e "$service" ]]; then
+        echo "Tuic ain't installed yet, bro." ; back2menu
+        fi
 
-    systemctl enable --now tuic.service
-    if systemctl status tuic | grep -q "active"; then
-        echo "${blue}${bold}-------------- Tuic's up and running, bro! -----------------"
-        echo ""
-        echo "${cyan}${bold}-------------- Here's your config ------------------"
-        while IFS= read -r line
-        do
-            IFS=', ' read -ra pairs <<< "$line"
-            for pair in "${pairs[@]}"; do
-                key=$(echo $pair | cut -d'=' -f1)
-                value=$(echo $pair | cut -d'=' -f2)
-                if [[ "$key" == "tuic" ]]; then
-                    value=$(echo $value | grep -oP '\d+(\.\d+)*')
-                fi
-                echo -e "${grey}$key${none} = ${magenta}$value${none}"
-        done
-    done < "${workspace}/client.txt"
-        echo "-------------- Shortcuts ------------------"       
-        echo -n "tuic-v5, "
-        while IFS= read -r line
-        do
-            IFS=', ' read -ra pairs <<< "$line"
-            for pair in "${pairs[@]}"; do
-                key=$(echo $pair | cut -d'=' -f1)
-                value=$(echo $pair | cut -d'=' -f2)
-                if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
-                    echo -n "${value}, "
-                elif [[ "$key" != "tuic" ]]; then
-                    echo -n "${key}=${value}, "
-                fi
+        systemctl enable --now tuic.service
+        if systemctl status tuic | grep -q "active"; then
+            echo "${blue}${bold}-------------- Tuic's up and running, bro! -----------------"
+            echo ""
+            echo "${cyan}${bold}-------------- Here's your config ------------------"
+            while IFS= read -r line
+            do
+                IFS=', ' read -ra pairs <<< "$line"
+                for pair in "${pairs[@]}"; do
+                    key=$(echo $pair | cut -d'=' -f1)
+                    value=$(echo $pair | cut -d'=' -f2)
+                    if [[ "$key" == "tuic" ]]; then
+                        value=$(echo $value | grep -oP '\d+(\.\d+)*')
+                    fi
+                    echo -e "${grey}$key${none} = ${magenta}$value${none}"
             done
-            done < "${workspace}/client.txt" | sed 's/, $//'
-        echo ""
-        echo "${dark_gray}${bold}-------------- wakuwaku ------------------"
-        echo ""
-        return 0
-    else
-        echo "-------------- Tuic failed to start, bro. --------------"
-        echo ""
-        echo "--------------  Error Error  --------------"
-        systemctl status tuic
-        return 1
-    fi
-}
+        done < "${workspace}/client.txt"
+            echo "-------------- Shortcuts ------------------"       
+            echo -n "tuic-v5, "
+            while IFS= read -r line
+            do
+                IFS=', ' read -ra pairs <<< "$line"
+                for pair in "${pairs[@]}"; do
+                    key=$(echo $pair | cut -d'=' -f1)
+                    value=$(echo $pair | cut -d'=' -f2)
+                    if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
+                        echo -n "${value}, "
+                    elif [[ "$key" != "tuic" ]]; then
+                        echo -n "${key}=${value}, "
+                    fi
+                done
+                done < "${workspace}/client.txt" | sed 's/, $//'
+            echo ""
+            echo "${dark_gray}${bold}-------------- wakuwaku ------------------"
+            echo ""
+            return 0
+        else
+            echo "-------------- Tuic failed to start, bro. --------------"
+            echo ""
+            echo "--------------  Error Error  --------------"
+            systemctl status tuic
+            return 1
+        fi
+    }
 
-stop() {
-    if [[ ! -e "$service" ]]; then
-        echo "Tuic ain't installed yet, bro."
-    else
-        systemctl stop tuic && echo "Tuic has been stopped, bro."
-    fi
-    back2menu
-}
+    stop() {
+        if [[ ! -e "$service" ]]; then
+            echo "Tuic ain't installed yet, bro."
+        else
+            systemctl stop tuic && echo "Tuic has been stopped, bro."
+        fi
+        back2menu
+    }
 
-install() {
-    ARCH=$(uname -m)
-    if [[ -e "$service" ]]; then
-        read -rp "Reinstall, y/n? " input
-        case "$input" in
-            y)  uninstall ;;
-            *)  back2menu ;;
+    install() {
+        ARCH=$(uname -m)
+        if [[ -e "$service" ]]; then
+            read -rp "Reinstall, y/n? " input
+            case "$input" in
+                y)  uninstall ;;
+                *)  back2menu ;;
+            esac
+        else
+            install_pkg $netpkg
+        fi
+        mkdir -p "${workspace}"
+        cd "${workspace}" || exit 1
+        echo "We in: $(pwd)"
+        echo "Grabbin' Tuic."
+        REPO_URL="https://api.github.com/repos/EAimTY/tuic/releases/latest"
+        TAG=$(wget -qO- -t1 -T2 "${REPO_URL}" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+        URL="https://github.com/EAimTY/tuic/releases/download/${TAG}/${TAG}-${ARCH}-unknown-linux-gnu"
+        wget -N --no-check-certificate "${URL}" -O tuic-server
+        chmod +x tuic-server
+        create_systemd
+        create_conf
+        stop
+        exit 1
+    }
+
+    menu() {
+      echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
+      echo ""
+      PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
+      options=("Install" "Start" "Stop" "Uninstall" "Bounce")
+      select option in "${options[@]}"; do
+        case $REPLY in
+          1) echo "Installin'!" && install ;;
+          2) echo "Startin' up!" && run ;;
+          3) echo "Shuttin' down!" && stop ;;
+          4) echo "Uninstallin'!" && uninstall ;;
+          *) echo "Bouncin'!" && exit 1 ;;
         esac
-    else
-        install_pkg $netpkg
-    fi
-    mkdir -p "${workspace}"
-    cd "${workspace}" || exit 1
-    echo "We in: $(pwd)"
-    echo "Grabbin' Tuic."
-    REPO_URL="https://api.github.com/repos/EAimTY/tuic/releases/latest"
-    TAG=$(wget -qO- -t1 -T2 "${REPO_URL}" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-    URL="https://github.com/EAimTY/tuic/releases/download/${TAG}/${TAG}-${ARCH}-unknown-linux-gnu"
-    wget -N --no-check-certificate "${URL}" -O tuic-server
-    chmod +x tuic-server
-    create_systemd
-    create_conf
-    run
-}
-
-menu() {
-  echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
-  echo ""
-  PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
-  options=("Install" "Start" "Stop" "Uninstall" "Bounce")
-  select option in "${options[@]}"; do
-    case $REPLY in
-      1) echo "Installin'!" && install ;;
-      2) echo "Startin' up!" && run ;;
-      3) echo "Shuttin' down!" && stop ;;
-      4) echo "Uninstallin'!" && uninstall ;;
-      *) echo "Bouncin'!" && exit 1 ;;
-    esac
-  done
-}
-# Usage
-menu
+      done
+    }
+    # Usage
+    menu
