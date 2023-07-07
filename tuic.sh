@@ -153,7 +153,11 @@ apply_cert() {
     # Create a directory to store the certificate
     mkdir -p /etc/ssl/private
     # ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
-    ~/.acme.sh/acme.sh --issue --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
+    if [[ $2 == "force" ]]; then
+        ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
+    else
+        ~/.acme.sh/acme.sh --issue --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
+    fi
     ~/.acme.sh/acme.sh --install-cert -d $1 --ecc --fullchain-file ${workspace}/fullchain.pem --key-file ${workspace}/private_key.pem --reloadcmd "systemctl restart tuic.service"
     [ $? -ne 0 ] && { echo "Dang, couldn't get the certificate." && exit 1; }
 }
@@ -166,8 +170,7 @@ check_cert() {
             ~/.acme.sh/acme.sh --revoke -d $1 --ecc
             ~/.acme.sh/acme.sh --remove -d $1 --ecc  # Delete the certificate file
             rm -f ~/.acme.sh/${1}_ecc/${1}.key  # Delete the key file
-            rm -f ${workspace}/fullchain.pem ; rm -f ${workspace}/private_key.pem
-            apply_cert $1
+            apply_cert $1 "force"
         else 
             echo "We're gonna use the existing certificate for you."
             cert_update $1
