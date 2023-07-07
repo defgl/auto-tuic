@@ -350,7 +350,10 @@ update() {
         read -rp "Update port? (Enter 'y' to update, or ignore): " not_update_port
         [[ ${not_update_port} == [yY] ]] && read -rp "Enter new port: " port_input
         
-        echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt
+        read -rp "Enable certificate fingerprint? (Enter 'y' to enable, or ignore): " not_enable_fingerprint
+        [[ ${not_enable_fingerprint} == [yY] ]] && read -rp "Enter certificate fingerprint: " fingerprint_input && fingerprint="fingerprint=${fingerprint_input}, "
+        
+        echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, ${fingerprint}password=${password_input}" > client.txt
         echo "Tuic's config has been updated, bro."
     fi
     back2menu
