@@ -26,27 +26,14 @@ light_magenta='\e[95m'
 error() {
     echo -e "$red$bold$1$plain"
 }
-
 success() {
     echo -e "$green$bold$1$plain"
 }
-
 warning() {
     echo -e "$yellow$bold$1$plain"
 }
-
 info() {
     echo -e "$plain$bold$1$plain"
-}
-
-# Use special characters to create a fancy border
-border() {
-    echo -e "$cyan$bold$underline====================================$plain"
-}
-
-# Use different colors and styles to highlight important information
-highlight() {
-    echo -e "$magenta$bold$blink$1$plain"
 }
 
 # Yo, we need root access for this, no exceptions!
@@ -261,6 +248,7 @@ EOF
      rm -rf ${workspace} ${service}
      echo "Tuic's kicked out, bro."
  }
+
 run() {
     if [[ ! -e "$service" ]]; then
         echo "Tuic ain't installed yet, bro." ; back2menu
@@ -337,28 +325,6 @@ run() {
      back2menu
  }
 
-update() {
-    if [[ ! -e "$service" ]]; then
-        echo "Tuic ain't installed yet, bro."
-    else
-        read -rp "Update uuid? (Enter 'y' to update, or ignore): " not_update_uuid
-        [[ ${not_update_uuid} == [yY] ]] && read -rp "Enter new uuid: " uuid_input
-        
-        read -rp "Update password? (Enter 'y' to update, or ignore): " not_update_password
-        [[ ${not_update_password} == [yY] ]] && read -rp "Enter new password: " password_input
-        
-        read -rp "Update port? (Enter 'y' to update, or ignore): " not_update_port
-        [[ ${not_update_port} == [yY] ]] && read -rp "Enter new port: " port_input
-        
-        read -rp "Enable certificate fingerprint? (Enter 'y' to enable, or ignore): " not_enable_fingerprint
-        [[ ${not_enable_fingerprint} == [yY] ]] && read -rp "Enter certificate fingerprint: " fingerprint_input && fingerprint="fingerprint=${fingerprint_input}, "
-        
-        echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, ${fingerprint}password=${password_input}" > client.txt
-        echo "Tuic's config has been updated, bro."
-    fi
-    back2menu
-}
-
  install() {
      ARCH=$(uname -m)
      if [[ -e "$service" ]]; then
@@ -384,23 +350,23 @@ update() {
      stop
      exit 1
  }
+
  menu() {
-   echo ""
-   echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
-   echo ""
-   PS3="$(echo -e "Pick your vibe ${cyan}[1-6]${none}: ")"
-   options=("Install" "Start" "Stop" "Uninstall" "Bounce" "Update")
-   select option in "${options[@]}"; do
-     case $REPLY in
-       1) echo "Installin'!" && install ;;
-       2) echo "Startin' up!" && run ;;
-       3) echo "Shuttin' down!" && stop ;;
-       4) echo "Uninstallin'!" && uninstall ;;
-       5) echo "Bouncin'!" && exit 1 ;;
-       6) echo "Updating!" && update ;;
-       *) echo "Invalid option $REPLY" ;;
-     esac
-   done
+     echo ""
+     echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
+     echo ""
+     PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
+     options=("Install" "Start" "Stop" "Uninstall" "Bounce")
+     select option in "${options[@]}"; do
+         case $REPLY in
+             1) echo "Installin'!" && install ;;
+             2) echo "Startin' up!" && run ;;
+             3) echo "Shuttin' down!" && stop ;;
+             4) echo "Uninstallin'!" && uninstall ;;
+             5) echo "Bouncin'!" && exit 1 ;;
+             *) echo "Invalid option $REPLY" ;;
+         esac
+     done
  }
  # Usage
  menu
