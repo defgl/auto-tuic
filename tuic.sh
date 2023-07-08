@@ -366,6 +366,7 @@ run() {
              5) echo "Bouncin'!" && exit 1 ;;
              *) echo "Invalid option $REPLY" ;;
          esac
+         echo ""
      done
  }
  # Usage
