@@ -347,8 +347,7 @@ run() {
      chmod +x tuic-server
      create_systemd
      create_conf
-     stop
-     exit 1
+     run
  }
 
  menu() {
