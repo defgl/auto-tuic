@@ -133,7 +133,21 @@ cert_update() {
     { crontab -l > conf_temp && echo "0 0 * */2 * ~/.acme.sh/acme.sh --cron --domain $1" >> conf_temp && crontab conf_temp && rm -f conf_temp && echo "Added an auto-renewal job for $1's certificate"; }
 }
 
-sudo find / -name "*.crt" -print
+apply_cert() {
+    # Check if acme.sh is installed
+    [ ! -f "/root/.acme.sh/acme.sh" ] && curl https://get.acme.sh | sh
+    echo "We're getting your certificate."
+    # Create a directory to store the certificate
+    mkdir -p /etc/ssl/private
+    # ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
+    if [[ $2 == "force" ]]; then
+        ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
+    else
+        ~/.acme.sh/acme.sh --issue --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
+    fi
+    ~/.acme.sh/acme.sh --install-cert -d $1 --ecc --fullchain-file ${workspace}/fullchain.pem --key-file ${workspace}/private_key.pem --reloadcmd "systemctl restart tuic.service"
+    [ $? -ne 0 ] && { echo "Dang, couldn't get the certificate." && exit 1; }
+}
 
 check_cert() {
     if ~/.acme.sh/acme.sh --list | grep -q $1; then
