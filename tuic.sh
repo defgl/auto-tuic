@@ -145,6 +145,9 @@ apply_cert() {
     else
         ~/.acme.sh/acme.sh --issue --ecc --standalone -d $1 --keylength ec-256 --server letsencrypt
     fi
+    # Save the private key to the correct location
+    cp ~/.acme.sh/${1}_ecc/${1}.key ${workspace}/private_key.pem
+    # Install the certificate
     ~/.acme.sh/acme.sh --install-cert -d $1 --ecc --fullchain-file ${workspace}/fullchain.pem --key-file ${workspace}/private_key.pem --reloadcmd "systemctl restart tuic.service"
     [ $? -ne 0 ] && { echo "Dang, couldn't get the certificate." && exit 1; }
 }
@@ -351,22 +354,23 @@ run() {
      exit 1
  }
 
- menu() {
-     echo ""
-     echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
-     echo ""
-     PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
-     options=("Install" "Start" "Stop" "Uninstall" "Bounce")
-     select option in "${options[@]}"; do
-         case $REPLY in
-             1) echo "Installin'!" && install ;;
-             2) echo "Startin' up!" && run ;;
-             3) echo "Shuttin' down!" && stop ;;
-             4) echo "Uninstallin'!" && uninstall ;;
-             5) echo "Bouncin'!" && exit 1 ;;
-             *) echo "Invalid option $REPLY" ;;
-         esac
-     done
- }
+menu() {
+    echo ""
+    echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
+    echo ""
+    PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
+    options=("Install" "Start" "Stop" "Uninstall" "Bounce")
+    select option in "${options[@]}"; do
+        case $REPLY in
+            1) echo "Installin'!" && install ;;
+            2) echo "Startin' up!" && run ;;
+            3) echo "Shuttin' down!" && stop ;;
+            4) echo "Uninstallin'!" && uninstall ;;
+            5) echo "Bouncin'!" && exit 1 ;;
+            *) echo "Invalid option $REPLY" ;;
+        esac
+        break
+    done
+}
  # Usage
  menu
