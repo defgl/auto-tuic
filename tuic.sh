@@ -73,21 +73,26 @@ back2menu() {
 
 # Yo, we gotta make sure we got all the stuff we need
 install_pkg() {
-    missing_packages=()
-    for package in $*; do
-        if ! type -P "$package" > /dev/null; then
-            missing_packages+=("$package")
-        fi
-    done
-    if [[ ${#missing_packages[@]} -gt 0 ]]; then
-        echo "Hold up, we gotta install some stuff first >${missing_packages[*]}"
-        $cmd install -y ${missing_packages[*]} &>/dev/null
-        if [[ $? != 0 ]]; then
-            [[ $cmd =~ yum ]] && yum install epel-release -y &>/dev/null
-            $cmd update -y &>/dev/null
-            $cmd install -y ${missing_packages[*]} &>/dev/null
-        fi
+  missing_packages=()
+  for package in $*; do
+    if ! type -P "$package" > /dev/null; then
+      missing_packages+=("$package")
     fi
+  done
+
+  if [[ ${#missing_packages[@]} -gt 0 ]]; then
+    echo "Hold up, we gotta install some stuff first >${missing_packages[*]}"
+    $cmd install -y ${missing_packages[*]} &>/dev/null
+
+    if [[ $? != 0 ]]; then
+      if [[ $cmd =~ yum ]]; then
+        yum install epel-release -y &>/dev/null
+      fi
+
+      $cmd update -y &>/dev/null
+      $cmd install -y ${missing_packages[*]} &>/dev/null
+    fi
+  fi
 }
 
 # Let's check if port 80 is free
