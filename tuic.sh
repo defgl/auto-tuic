@@ -361,17 +361,17 @@ run() {
      echo ""
      PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
      options=("Install" "Start" "Stop" "Uninstall" "Bounce")
-     select option in "${options[@]}"; do
-         case $REPLY in
-             1) echo "Installin'!" && install ;;
-             2) echo "Startin' up!" && run ;;
-             3) echo "Shuttin' down!" && stop ;;
-             4) echo "Uninstallin'!" && uninstall ;;
-             5) echo "Bouncin'!" && exit 1 ;;
-             *) echo "Invalid option $REPLY" ;;
-         esac
-         echo ""
+     select -n option in "${options[@]}"; do
+        case $option in
+            "Install") echo "Installin'!" && install ;;
+            "Start") echo "Startin' up!" && run ;;
+            "Stop") echo "Shuttin' down!" && stop ;;
+            "Uninstall") echo "Uninstallin'!" && uninstall ;;
+            "Bounce") echo "Bouncin'!" && exit 1 ;;
+            *) echo "Invalid option $option" ;;
+        esac
+        echo ""
      done
- }
+    }
  # Usage
  menu
