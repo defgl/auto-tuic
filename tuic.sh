@@ -372,6 +372,6 @@ run() {
         esac
         echo ""
      done
-    }
+}
  # Usage
  menu
