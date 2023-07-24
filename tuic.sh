@@ -355,13 +355,13 @@ run() {
      run
  }
 
- menu() {
-     echo ""
-     echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
-     echo ""
-     PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
-     options=("Install" "Start" "Stop" "Uninstall" "Bounce")
-     select -n option in "${options[@]}"; do
+menu() {
+    echo ""
+    echo -e "${light_magenta} Yo, Anya's auto Tuic in the house! ${plain}"
+    echo ""
+    PS3="$(echo -e "Pick your vibe ${cyan}[1-5]${none}: ")"
+    options=("Install" "Start" "Stop" "Uninstall" "Bounce")
+    select option in "${options[@]}"; do
         case $option in
             "Install") echo "Installin'!" && install ;;
             "Start") echo "Startin' up!" && run ;;
@@ -371,7 +371,8 @@ run() {
             *) echo "Invalid option $option" ;;
         esac
         echo ""
-     done
+        break
+    done
 }
  # Usage
  menu
