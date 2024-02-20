@@ -103,13 +103,18 @@ install_pkg() {
 #    fi
 #}
 
+get_ip() {
+    export "$(wget --no-check-certificate -4 -qO- https://one.one.one.one/cdn-cgi/trace | grep ip=)" &>/dev/null
+    [[ -z $ip ]] && export "$(wget --no-check-certificate -6 -qO- https://one.one.one.one/cdn-cgi/trace | grep ip=)" &>/dev/null
+}
+
 check_host() {
     local domain=$1
     get_ip
     local my_ip=$ip
     is_dns_type="a"
     [[ $(grep ":" <<<$my_ip) ]] && is_dns_type="aaaa"
-    local domain_ip=$(_wget -qO- --header="accept: application/dns-json" "https://one.one.one.one/dns-query?name=$domain&type=$is_dns_type" | jq -r '.Answer[0].data')
+    local domain_ip=$(wget --no-check-certificate -qO- --header="accept: application/dns-json" "https://one.one.one.one/dns-query?name=$domain&type=$is_dns_type" | jq -r '.Answer[0].data')
     if [[ $my_ip != $domain_ip ]]; then
         msg err "Domain resolution discrepancy detected."
         exit 1
