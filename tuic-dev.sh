@@ -141,26 +141,25 @@ is_port_used() {
 
 
 generate_random_uuid() {
-    local uuid=$(cat /proc/sys/kernel/random/uuid)
-    msg "$uuid"
+    echo $(cat /proc/sys/kernel/random/uuid)
 }
 
 generate_random_password() {
     local length=$1
-    local password=$(tr -dc 'A-HJ-NP-Za-km-z2-9' < /dev/urandom | fold -w "$length" | head -n 1)
-    msg "$password"
+    echo $(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$length")
 }
 
 find_unused_port() {
     local port
     while :; do
         port=$(shuf -i 1024-65535 -n 1)
-        if ! netstat -ntlp | grep -q -E ":${port}\\s "; then
-            msg $port
+        if ! ss -tuln | grep -q ":${port} " ; then
+            echo $port
             break
         fi
     done
 }
+
 
 cert_update() {
     local domain=$1
@@ -246,12 +245,12 @@ create_conf() {
     fi
 
     read -rp "Assign a port (Leave it blank for a random one): " port_input
-    [[ -z ${port_input} ]] && port_input=$(find_unused_port) && msg info "Assigned a random port for you: $port_input"
+    [[ -z ${port_input} ]] && port_input=$(find_unused_port) && echo "[INFO] Assigned a random port for you: $port_input"
     read -rp "Drop your UUID here (Leave it blank for a random one): " uuid_input
-    [[ -z ${uuid_input} ]] && uuid_input=$(generate_random_uuid) && msg info "Generated a random UUID for you: $uuid_input"
-
+    [[ -z ${uuid_input} ]] && uuid_input=$(generate_random_uuid) && echo "[INFO] Generated a random UUID for you: $uuid_input"
     read -rp "Drop your password here (Leave it blank for a random one): " password_input
-    [[ -z ${password_input} ]] && password_input=$(generate_random_password 16) && msg info "Generated a random password for you: $password_input"
+    [[ -z ${password_input} ]] && password_input=$(generate_random_password 16) && echo "[INFO] Generated a random password for you: $password_input"
+
 
     cat > config.json << EOF
 {
