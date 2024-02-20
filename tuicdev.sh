@@ -291,44 +291,30 @@ run() {
         msg info "Tuic is already running."
     else
         systemctl start tuic
-        msg ok "Tuic started."
-    fi
-        # while IFS= read -r line
-        # do
-        #     IFS=', ' read -ra pairs <<< "$line"
-        #     for pair in "${pairs[@]}"; do
-        #         key=$(echo $pair | cut -d'=' -f1)
-        #         value=$(echo $pair | cut -d'=' -f2)
-        #         if [[ "$key" == "tuic" ]]; then
-        #             value=$(echo $value | grep -oP '\d+(\.\d+)*')
-        #         fi
-        #         echo -e "${grey}$key${none} = ${magenta}$value${none}"
-        #     done
-        # done < "${workspace}/client.txt"
-        #echo ""        
-        #echo -e "-------------- All slick and easy, bro! ------------------"   
-        #echo -n "tuic-v5"
-        while IFS= read -r line
-        do
-            IFS=', ' read -ra pairs <<< "$line"
-            for pair in "${pairs[@]}"; do
-                key=$(echo $pair | cut -d'=' -f1)
-                value=$(echo $pair | cut -d'=' -f2)
-                if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
-                    echo -n "${value}, "
-                elif [[ "$key" != "tuic" ]]; then
-                    echo -n "${key}=${value}, "
-                fi
-            done
-        done < "${workspace}/client.txt" | sed 's/, $//'
-        echo "----------------------------------------------------------------------------"
-        msg -e "${light_orange}${bold}-------------- Excusive For Surge ------------------${plain}"            
-        echo ""
-        return 0
-    else
-        msg err "Tuic failed to start."
-        systemctl status tuic
-        return 1
+        if [ $? -eq 0 ]; then
+            msg ok "Tuic started."
+            while IFS= read -r line
+            do
+                IFS=', ' read -ra pairs <<< "$line"
+                for pair in "${pairs[@]}"; do
+                    key=$(echo $pair | cut -d'=' -f1)
+                    value=$(echo $pair | cut -d'=' -f2)
+                    if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
+                        echo -n "${value}, "
+                    elif [[ "$key" != "tuic" ]]; then
+                        echo -n "${key}=${value}, "
+                    fi
+                done
+            done < "${workspace}/client.txt" | sed 's/, $//'
+            echo "----------------------------------------------------------------------------"
+            msg -e "${light_orange}${bold}-------------- Excusive For Surge ------------------${plain}"            
+            echo ""
+            return 0
+        else
+            msg err "Tuic failed to start."
+            systemctl status tuic
+            return 1
+        fi
     fi
 }
 
