@@ -342,7 +342,7 @@ manage() {
 }
 
 menu() {
-    echo -e "${cyan}${underline}${blink}Tuic, faster than ever, even in adversity.${reset}"
+    #echo -e "${cyan}${underline}${blink}Tuic, faster than ever, even in adversity.${reset}"
     msg ok "1. Install Tuic"
     msg warn "2. Uninstall Tuic"
     msg info "3. Manage Tuic"
