@@ -80,6 +80,7 @@ check_domain() {
         msg err "Domain $domain does not resolve to this server IP."
         exit 1
     }
+}
 
 is_port_used() {
     if [[ $(type -P netstat) ]]; then
