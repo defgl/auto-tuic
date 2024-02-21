@@ -358,5 +358,5 @@ menu() {
         *) msg err "Invalid operation." ;;
     esac
 }
-
-menu
+ # Usage
+ menu
