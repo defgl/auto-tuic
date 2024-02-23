@@ -416,7 +416,7 @@ menu() {
     _red "2. Uninstall"
     _yellow "3. Manage"
     echo "4. Exit"
-    read -p "Select operation (1/2/3/4): " operation
+    read -p "Select operation (1-4): " operation
 
     case $operation in
         1) install ;;
