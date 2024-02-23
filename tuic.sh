@@ -247,6 +247,31 @@ EOF
     fi
 }
 
+ install() {
+     ARCH=$(uname -m)
+     if [[ -e "$service" ]]; then
+         read -rp "Reinstall, y/n? " input
+         case "$input" in
+             y)  uninstall ;;
+             *)  back2menu ;;
+         esac
+     else
+         install_pkg $netpkg
+     fi
+     mkdir -p "${workspace}"
+     cd "${workspace}" || exit 1
+     echo "We in: $(pwd)"
+     echo "Grabbin' Tuic."
+     REPO_URL="https://api.github.com/repos/EAimTY/tuic/releases/latest"
+     TAG=$(wget -qO- -t1 -T2 "${REPO_URL}" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+     URL="https://github.com/EAimTY/tuic/releases/download/${TAG}/${TAG}-${ARCH}-unknown-linux-gnu"
+     wget -N --no-check-certificate "${URL}" -O tuic-server
+     chmod +x tuic-server
+     create_systemd
+     create_conf
+     run
+ }
+
  uninstall() {
      systemctl stop tuic
      systemctl disable --now tuic.service
@@ -328,31 +353,6 @@ run() {
          systemctl stop tuic && echo "Tuic has been stopped, bro."
      fi
      back2menu
- }
-
- install() {
-     ARCH=$(uname -m)
-     if [[ -e "$service" ]]; then
-         read -rp "Reinstall, y/n? " input
-         case "$input" in
-             y)  uninstall ;;
-             *)  back2menu ;;
-         esac
-     else
-         install_pkg $netpkg
-     fi
-     mkdir -p "${workspace}"
-     cd "${workspace}" || exit 1
-     echo "We in: $(pwd)"
-     echo "Grabbin' Tuic."
-     REPO_URL="https://api.github.com/repos/EAimTY/tuic/releases/latest"
-     TAG=$(wget -qO- -t1 -T2 "${REPO_URL}" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-     URL="https://github.com/EAimTY/tuic/releases/download/${TAG}/${TAG}-${ARCH}-unknown-linux-gnu"
-     wget -N --no-check-certificate "${URL}" -O tuic-server
-     chmod +x tuic-server
-     create_systemd
-     create_conf
-     run
  }
 
 menu() {
