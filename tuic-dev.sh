@@ -38,8 +38,8 @@ msg() {
         err) echo -e "${red}[error | ${plain}${purple}${timestamp}${plain}${red}] $2${plain}" ;;
         warn) echo -e "${yellow}[warning | ${plain}${purple}${timestamp}${plain}${yellow}] $2${plain}" ;;
         ok) echo -e "${green}[success | ${plain}${purple}${timestamp}${plain}${green}] $2${plain}" ;;
-        info) echo -e "[info | ${plain}${purple}${timestamp}${plain}] $2" ;;
-        *) echo -e "[log | ${plain}${purple}${timestamp}${plain}] $2" ;;
+        info) echo -e "[info | ${plain}${purple}${timestamp}${plain}] $2${plain}" ;;
+        *) echo -e "[log | ${plain}${purple}${timestamp}${plain}] $2${plain}" ;;
     esac
 }
 
@@ -265,9 +265,9 @@ EOF
     read -rp "Wanna enable certificate fingerprint? (Enter 'y' to enable, or ignore): " not_fingerprint
     if [[ ${not_fingerprint} == [yY] ]]; then
         fingerprint=$(openssl x509 -noout -fingerprint -sha256 -inform pem -in "${workspace}/fullchain.pem" | cut -d '=' -f 2)
-        [[ -n ${fingerprint} ]] && msg ok "Added the certificate fingerprint for you." && echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, fingerprint=${fingerprint}, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt || { msg err "Couldn't generate the certificate fingerprint. Check if the certificate is valid, bro." && exit 1; }
+        [[ -n ${fingerprint} ]] && msg ok "Added the certificate fingerprint for you." && echo -e "Proxy-TUIC = tuic-v5, ${domain_input}, ${port_input}, password=${password_input}, skip-cert-verify=true, sni=${domain_input}, server-cert-fingerprint-sha256=${fingerprint}, uuid=${uuid_input}, alpn=h3" > proxy_surge.ini || { msg err "Couldn't generate the certificate fingerprint. Check if the certificate is valid, bro." && exit 1; }
     else 
-        echo -e "tuic=${TAG}, address=${domain_input}, port=${port_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3, password=${password_input}" > client.txt
+        echo -e "Proxy-TUIC = tuic-v5, ${domain_input}, ${port_input}, password=${password_input}, skip-cert-verify=true, sni=${domain_input}, uuid=${uuid_input}, alpn=h3" > proxy_surge.ini
     fi
 }
 # Functions to manage (install, uninstall, run, stop) Tuic service remain unchanged
@@ -311,22 +311,9 @@ run() {
     else
         systemctl start tuic
         if [ $? -eq 0 ]; then
-            msg ok "Tuic started."
+            msg ok "Tuic booted."
             msg ok "------------------------ FOR SURGE USE ONLY ------------------------"
-            _cyan -n "TEST = tuic-v5, "
-            while IFS= read -r line
-            do
-                IFS=', ' read -ra pairs <<< "$line"
-                for pair in "${pairs[@]}"; do
-                    key=$(_cyan $pair | cut -d'=' -f1)
-                    value=$(_cyan $pair | cut -d'=' -f2)
-                    if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
-                        printf "${value}, "
-                    elif [[ "$key" != "tuic" ]]; then
-                        printf "${key}=${value}, "
-                    fi
-                done
-            done < "${workspace}/client.txt" | sed 's/, $//' >> "${workspace}/client_surge.txt"
+            cat "${workspace}/proxy_surge.ini"
             echo ""
             echo "----------------------------------------------------------------------------"
             echo ""
@@ -341,7 +328,7 @@ run() {
 
 stop() {
      if [[ ! -e "$service" ]]; then
-         echo "Tuic ain't installed yet, bro."
+         echo "Tuic service not found."
      else
          systemctl stop tuic && warn "Tuic has been stopped."
      fi
@@ -354,8 +341,8 @@ restart() {
 }
 
 checkconfig() {
-    if [ -f "${workspace}/client_surge.txt" ]; then
-        cat "${workspace}/client_surge.txt"
+    if [ -f "${workspace}/proxy_surge.ini" ]; then
+        cat "${workspace}/proxy_surge.ini"
     else
         msg err "Configuration file not found."
     fi
@@ -366,9 +353,22 @@ changeconfig() {
     local prompt=$2
     read -p "Enter new ${prompt} (leave blank to keep current): " new_value
     if [ -n "$new_value" ]; then
-        sed -i "s/\(${key}=\)[^,]*/\1${new_value}/" "${workspace}/client.txt"
-        cp "${workspace}/client.txt" "${workspace}/client_surge.txt"
-        msg ok "${prompt} updated."
+        # Update proxy_surge.ini
+        sed -i "s/\(${key}=\)[^,]*/\1${new_value}/" "${workspace}/proxy_surge.ini"
+        #msg ok "${prompt} updated in proxy_surge.ini."
+
+        # Update config.json
+        if [[ "$key" == "port" ]]; then
+            sed -i "s/\(\"server\": \"[::]:\)[^\"]*/\1${new_value}/" "${workspace}/config.json"
+        elif [[ "$key" == "uuid" ]] || [[ "$key" == "password" ]]; then
+            sed -i "s/\(\"${key}\": \"\)[^\"]*/\1${new_value}/" "${workspace}/config.json"
+        fi
+        _green "${prompt} updated in server end."
+
+        # Special handling for password, uuid and port
+        if [[ "$key" == "password" ]] || [[ "$key" == "uuid" ]] || [[ "$key" == "port" ]]; then
+            _green "${prompt} updated: ${new_value}."
+        fi
     else
         msg info "No changes made."
     fi
@@ -378,7 +378,7 @@ modify() {
     _green "1. Change port"
     _red "2. Change UUID"
     _yellow "3. Change password"
-    echo "4. View configuration"
+    echo "4. Display configuration"
     echo "5. Back to main menu"
     read -p "Select operation (1/2/3/4/5): " operation
 
@@ -393,10 +393,10 @@ modify() {
 }
 
 manage() {
-    _green "1. Start Tuic"
-    _red "2. Stop Tuic"
-    _yellow "3. Restart Tuic"
-    echo "4. Modify configuration"
+    _green "1. Boot"
+    _red "2. Stop"
+    _yellow "3. Reboot"
+    echo "4. Config"
     echo "5. Back to main menu"
     read -p "Select operation (1-5): " operation
 
@@ -412,9 +412,9 @@ manage() {
 
 menu() {
     _cyan "${cyan}${underline}${blink}Tuic, faster than ever, even in adversity.${reset}\n"
-    _green "1. Install Tuic"
-    _red "2. Uninstall Tuic"
-    _yellow "3. Manage Tuic"
+    _green "1. Install"
+    _red "2. Uninstall"
+    _yellow "3. Manage"
     echo "4. Exit"
     read -p "Select operation (1/2/3/4): " operation
 
