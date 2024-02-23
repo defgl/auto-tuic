@@ -32,12 +32,13 @@ warn() {
 
 # Function to display messages
 msg() {
+    timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
     case $1 in
-        err) echo -e "${red}[ERROR] $2${plain}" ;;
-        warn) echo -e "${yellow}[WARNING] $2${plain}" ;;
-        ok) echo -e "${green}[OK] $2${plain}" ;;
-        info) echo -e "[INFO] $2" ;;
-        *) echo -e "$2" ;;
+        err) echo -e "${red}[error | $timestamp] Containment breach: $2${plain}" ;;
+        warn) echo -e "${yellow}[warning | $timestamp] Potential anomaly detected: $2${plain}" ;;
+        ok) echo -e "${green}[success | $timestamp] Containment successful: $2${plain}" ;;
+        info) echo -e "[info | $timestamp] $2" ;;
+        *) echo -e "[log | $timestamp] $2" ;;
     esac
 }
 
@@ -310,6 +311,7 @@ run() {
         systemctl start tuic
         if [ $? -eq 0 ]; then
             msg ok "Tuic started."
+            msg ok "------------------------ FOR SURGE USE ONLY ------------------------"
             _cyan -n "tuic-v5, "
             while IFS= read -r line
             do
@@ -318,9 +320,9 @@ run() {
                     key=$(_cyan $pair | cut -d'=' -f1)
                     value=$(_cyan $pair | cut -d'=' -f2)
                     if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
-                        _cyan -n "${value}, "
+                        printf "${value}, "
                     elif [[ "$key" != "tuic" ]]; then
-                        _cyan -n "${key}=${value}, "
+                        printf "${key}=${value}, "
                     fi
                 done
             done < "${workspace}/client.txt" | sed 's/, $//'
