@@ -312,7 +312,7 @@ run() {
         if [ $? -eq 0 ]; then
             msg ok "Tuic started."
             msg ok "------------------------ FOR SURGE USE ONLY ------------------------"
-            _cyan -n "tuic-v5, "
+            _cyan -n "TEST = tuic-v5, "
             while IFS= read -r line
             do
                 IFS=', ' read -ra pairs <<< "$line"
@@ -325,7 +325,7 @@ run() {
                         printf "${key}=${value}, "
                     fi
                 done
-            done < "${workspace}/client.txt" | sed 's/, $//'
+            done < "${workspace}/client.txt" | sed 's/, $//' >> "${workspace}/client_surge.txt"
             echo ""
             echo "----------------------------------------------------------------------------"
             echo ""
@@ -338,7 +338,7 @@ run() {
     fi
 }
 
- stop() {
+stop() {
      if [[ ! -e "$service" ]]; then
          echo "Tuic ain't installed yet, bro."
      else
@@ -352,18 +352,59 @@ restart() {
     run
 }
 
+checkconfig() {
+    if [ -f "${workspace}/client_surge.txt" ]; then
+        cat "${workspace}/client_surge.txt"
+    else
+        msg err "Configuration file not found."
+    fi
+}
+
+changeconfig() {
+    local key=$1
+    local prompt=$2
+    read -p "Enter new ${prompt} (leave blank to keep current): " new_value
+    if [ -n "$new_value" ]; then
+        sed -i "s/\(${key}=\)[^,]*/\1${new_value}/" "${workspace}/client.txt"
+        cp "${workspace}/client.txt" "${workspace}/client_surge.txt"
+        msg ok "${prompt} updated."
+    else
+        msg info "No changes made."
+    fi
+}
+
+modify() {
+    _green "1. Change port"
+    _red "2. Change UUID"
+    _yellow "3. Change password"
+    echo "4. View configuration"
+    echo "5. Back to main menu"
+    read -p "Select operation (1/2/3/4/5): " operation
+
+    case $operation in
+        1) changeconfig "port" "port" ;;
+        2) changeconfig "uuid" "UUID" ;;
+        3) changeconfig "password" "password" ;;
+        4) checkconfig ;;
+        5) manage ;;
+        *) msg err "Invalid operation." ;;
+    esac
+}
+
 manage() {
     _green "1. Start Tuic"
     _red "2. Stop Tuic"
     _yellow "3. Restart Tuic"
-    echo "4. Back to main menu"
-    read -p "Select operation (1/2/3/4): " operation
+    echo "4. Modify configuration"
+    echo "5. Back to main menu"
+    read -p "Select operation (1-5): " operation
 
     case $operation in
         1) run ;;
         2) stop ;;
         3) restart ;;
-        4) menu ;;
+        4) modify ;;
+        5) menu ;;
         *) msg err "Invalid operation." ;;
     esac
 }
