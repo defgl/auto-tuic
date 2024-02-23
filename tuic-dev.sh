@@ -35,11 +35,11 @@ warn() {
 msg() {
     timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
     case $1 in
-        err) echo -e "${red}[error | ${purple}${timestamp}${red}] $2${plain}" ;;
-        warn) echo -e "${yellow}[warning | ${purple}${timestamp}${yellow}] $2${plain}" ;;
-        ok) echo -e "${green}[success | ${purple}${timestamp}${green}] $2${plain}" ;;
-        info) echo -e "[info | ${purple}${timestamp}] $2" ;;
-        *) echo -e "[log | ${purple}${timestamp}] $2" ;;
+        err) echo -e "${red}[error | ${plain}${purple}${timestamp}${plain}${red}] $2${plain}" ;;
+        warn) echo -e "${yellow}[warning | ${plain}${purple}${timestamp}${plain}${yellow}] $2${plain}" ;;
+        ok) echo -e "${green}[success | ${plain}${purple}${timestamp}${plain}${green}] $2${plain}" ;;
+        info) echo -e "[info | ${plain}${purple}${timestamp}${plain}] $2" ;;
+        *) echo -e "[log | ${plain}${purple}${timestamp}${plain}] $2" ;;
     esac
 }
 
@@ -411,10 +411,10 @@ manage() {
 }
 
 menu() {
-    #echo -e "${cyan}${underline}${blink}Tuic, faster than ever, even in adversity.${reset}"
-    msg ok "1. Install Tuic"
-    msg warn "2. Uninstall Tuic"
-    msg info "3. Manage Tuic"
+    _cyan "${cyan}${underline}${blink}Tuic, faster than ever, even in adversity.${reset}\n"
+    _green "1. Install Tuic"
+    _red "2. Uninstall Tuic"
+    _yellow "3. Manage Tuic"
     echo "4. Exit"
     read -p "Select operation (1/2/3/4): " operation
 
