@@ -49,17 +49,23 @@ private_key="$cert_dir/private.key"
 # Ensure the certificate directory exists
 mkdir -p "$cert_dir"
 
-# Simplify the installation of missing packages
+# Simplify the installation of missing packages and ensure dig command is available
 install_pkg() {
     msg info "Checking and installing missing dependencies..."
-    $cmd update -y
-    for package in $dependencies; do
-        if ! command -v $package &>/dev/null; then
-            msg warn "Installing $package..."
-            $cmd install -y $package
-        fi
-    done
+    
+    # Detect package manager and install dig package along with other dependencies
+    if command -v apt-get &>/dev/null; then
+        apt-get update -y
+        apt-get install -y dnsutils ${dependencies[@]}
+    elif command -v yum &>/dev/null; then
+        yum makecache fast
+        yum install -y bind-utils ${dependencies[@]}
+    else
+        msg err "Unsupported package manager. Script supports apt-get (Debian/Ubuntu) and yum (CentOS/RHEL)."
+        exit 1
+    fi
 }
+
 
 # Function to get the public IP of the server
 get_ip() {
