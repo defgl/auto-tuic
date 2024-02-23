@@ -35,11 +35,11 @@ warn() {
 msg() {
     timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
     case $1 in
-        err) echo -e "${red}[error | ${plain}${purple}${timestamp}${plain}${red}] $2${plain}" ;;
-        warn) echo -e "${yellow}[warning | ${plain}${purple}${timestamp}${plain}${yellow}] $2${plain}" ;;
-        ok) echo -e "${green}[success | ${plain}${purple}${timestamp}${plain}${green}] $2${plain}" ;;
-        info) echo -e "[info | ${plain}${purple}${timestamp}${plain}] $2${plain}" ;;
-        *) echo -e "[log | ${plain}${purple}${timestamp}${plain}] $2${plain}" ;;
+        err) echo -e "${red}[error | ${reset}${purple}${timestamp}${reset}${red}] $2${reset}" ;;
+        warn) echo -e "${yellow}[warning | ${reset}${purple}${timestamp}${reset}${yellow}] $2${reset}" ;;
+        ok) echo -e "${green}[success | ${reset}${purple}${timestamp}${reset}${green}] $2${reset}" ;;
+        info) echo -e "[info | ${reset}${purple}${timestamp}${reset}] $2${reset}" ;;
+        *) echo -e "[log | ${reset}${purple}${timestamp}${reset}] $2${reset}" ;;
     esac
 }
 
