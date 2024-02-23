@@ -34,9 +34,9 @@ warn() {
 msg() {
     timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
     case $1 in
-        err) echo -e "${red}[error | $timestamp] Containment breach: $2${plain}" ;;
-        warn) echo -e "${yellow}[warning | $timestamp] Potential anomaly detected: $2${plain}" ;;
-        ok) echo -e "${green}[success | $timestamp] Containment successful: $2${plain}" ;;
+        err) echo -e "${red}[error | $timestamp] $2${plain}" ;;
+        warn) echo -e "${yellow}[warning | $timestamp] $2${plain}" ;;
+        ok) echo -e "${green}[success | $timestamp] $2${plain}" ;;
         info) echo -e "[info | $timestamp] $2" ;;
         *) echo -e "[log | $timestamp] $2" ;;
     esac
