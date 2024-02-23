@@ -315,12 +315,12 @@ run() {
             do
                 IFS=', ' read -ra pairs <<< "$line"
                 for pair in "${pairs[@]}"; do
-                    key=$(cyan $pair | cut -d'=' -f1)
-                    value=$(cyan $pair | cut -d'=' -f2)
+                    key=$(_cyan $pair | cut -d'=' -f1)
+                    value=$(_cyan $pair | cut -d'=' -f2)
                     if [[ "$key" == "address" ]] || [[ "$key" == "port" ]]; then
-                        cyan -n "${value}, "
+                        _cyan -n "${value}, "
                     elif [[ "$key" != "tuic" ]]; then
-                        cyan -n "${key}=${value}, "
+                        _cyan -n "${key}=${value}, "
                     fi
                 done
             done < "${workspace}/client.txt" | sed 's/, $//'
