@@ -10,6 +10,7 @@ plain='\e[0m'
 underline='\e[4m'
 blink='\e[5m'
 cyan='\e[96m'
+purple='\e[35m'
 reset='\e[0m'
 _red() { echo -e ${red}$@${none}; }
 _blue() { echo -e ${blue}$@${none}; }
@@ -34,11 +35,11 @@ warn() {
 msg() {
     timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
     case $1 in
-        err) echo -e "${red}[error | $timestamp] $2${plain}" ;;
-        warn) echo -e "${yellow}[warning | $timestamp] $2${plain}" ;;
-        ok) echo -e "${green}[success | $timestamp] $2${plain}" ;;
-        info) echo -e "[info | $timestamp] $2" ;;
-        *) echo -e "[log | $timestamp] $2" ;;
+        err) echo -e "${red}[error | ${purple}${timestamp}${red}] $2${plain}" ;;
+        warn) echo -e "${yellow}[warning | ${purple}${timestamp}${yellow}] $2${plain}" ;;
+        ok) echo -e "${green}[success | ${purple}${timestamp}${green}] $2${plain}" ;;
+        info) echo -e "[info | ${purple}${timestamp}] $2" ;;
+        *) echo -e "[log | ${purple}${timestamp}] $2" ;;
     esac
 }
 
