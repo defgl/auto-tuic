@@ -240,14 +240,14 @@ create_conf() {
     [[ -z ${password_input} ]] && password_input=$(generate_random_password 16) && echo "[INFO] Generated a random password for you: $password_input"
 
 
-    cat > config.json << EOF
+cat > config.json << EOF
 {
     "server": "[::]:${port_input}",
     "users": {
         "${uuid_input}": "${password_input}"
     },
-    "certificate": "${workspace}/fullchain.pem",
-    "private_key": "${workspace}/private_key.pem",
+    "certificate": "${fullchain}",
+    "private_key": "${private_key}",
     "congestion_control": "bbr",
     "alpn": ["h3", "spdy/3.1"],
     "udp_relay_ipv6": true,
@@ -260,6 +260,7 @@ create_conf() {
     "log_level": "WARN"
 }
 EOF
+
     msg ok "Configuration established."
 
     read -rp "Wanna enable certificate fingerprint? (Enter 'y' to enable, or ignore): " not_fingerprint
