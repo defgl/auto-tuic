@@ -273,7 +273,7 @@ EOF
 # Functions to manage (install, uninstall, run, stop) Tuic service remain unchanged
 
 install() {
-         ARCH=$(uname -m)
+     ARCH=$(uname -m)
      if [[ -e "$service" ]]; then
          read -rp "Reinstall, y/n? " input
          case "$input" in
