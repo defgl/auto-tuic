@@ -6,32 +6,34 @@
 red='\e[31m'
 green='\e[92m'
 yellow='\e[33m'
-plain='\e[0m'
+reset='\e[0m'
 underline='\e[4m'
 blink='\e[5m'
 cyan='\e[96m'
 purple='\e[35m'
-reset='\e[0m'
-_red() { echo -e ${red}$@${none}; }
-_blue() { echo -e ${blue}$@${none}; }
-_cyan() { echo -e ${cyan}$@${none}; }
-_green() { echo -e ${green}$@${none}; }
-_yellow() { echo -e ${yellow}$@${none}; }
-_magenta() { echo -e ${magenta}$@${none}; }
-_red_bg() { echo -e "\e[41m$@${none}"; }
 
-is_err=$(_red_bg ERROR!)
-is_warn=$(_red_bg WARNING!)
+# Color print functions, corrected to use 'reset' instead of 'none'
+_red() { echo -e "${red}$@${reset}"; }
+_green() { echo -e "${green}$@${reset}"; }
+_yellow() { echo -e "${yellow}$@${reset}"; }
+_cyan() { echo -e "${cyan}$@${reset}"; }
+_magenta() { echo -e "${purple}$@${reset}"; } # Corrected to use 'purple'
+_red_bg() { echo -e "\e[41m$@${reset}"; }
 
+is_err=$(_red_bg "ERROR!")
+is_warn=$(_red_bg "WARNING!")
+
+# Corrected the use of 'exit' in the error handling function
 err() {
-    echo -e "\n$is_err $@\n" && exit 1
+    echo -e "\n$is_err $@\n" && return 1
 }
 
 warn() {
     echo -e "\n$is_warn $@\n"
 }
 
-# Function to display messages
+
+# Function to display messages with corrected '-e' option for echo
 msg() {
     timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
     case $1 in
@@ -42,6 +44,7 @@ msg() {
         *) echo -e "[log | ${reset}${purple}${timestamp}${reset}] $2${reset}" ;;
     esac
 }
+
 
 # Check for root privileges
 [[ $EUID -ne 0 ]] && msg err "Root clearance required." && exit 1
@@ -107,20 +110,23 @@ check_domain() {
     }
 }
 
+# Corrected 'is_port_used' function to properly check port usage
 is_port_used() {
     if [[ $(type -P netstat) ]]; then
-        [[ ! $is_used_port ]] && is_used_port="$(netstat -tunlp | sed -n 's/.*:\([0-9]\+\).*/\1/p' | sort -nu)"
-        echo $is_used_port | sed 's/ /\n/g' | grep ^${1}$
-        return
+        is_used_port="$(netstat -tunlp | awk '/^tcp/ {print $4}' | cut -d: -f2)"
+    elif [[ $(type -P ss) ]]; then
+        is_used_port="$(ss -tunlp | awk '/^tcp/ {print $5}' | cut -d: -f2)"
+    else
+        is_cant_test_port=1
+        msg warn "Unable to check if the port is available."
+        return 1 # Indicating failure to check port
     fi
-    if [[ $(type -P ss) ]]; then
-        [[ ! $is_used_port ]] && is_used_port="$(ss -tunlp | sed -n 's/.*:\([0-9]\+\).*/\1/p' | sort -nu)"
-        echo $is_used_port | sed 's/ /\n/g' | grep ^${1}$
-        return
+
+    if echo "$is_used_port" | grep -qw "^${1}$"; then
+        return 0 # Port is used
+    else
+        return 1 # Port is not used
     fi
-    is_cant_test_port=1
-    msg "$is_warn Unable to check if the port is available."
-    msg "Please run: $(_yellow "${cmd} update -y; ${cmd} install net-tools -y") to fix this issue."
 }
 
 
