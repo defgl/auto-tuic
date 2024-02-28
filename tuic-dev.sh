@@ -306,11 +306,55 @@ install() {
 }
 
 uninstall() {
+    # 停止服务
     systemctl stop tuic
-     systemctl disable --now tuic.service
-     rm -rf ${workspace} ${service}
+    systemctl disable --now tuic.service
+
+    # 删除服务和工作目录
+    rm -rf ${workspace} ${service}
+    echo "Tuic service and workspace have been removed."
+
+    # 删除所有证书文件
+    echo "Removing all certificate files from /root/cert/ ..."
+    rm -rf /root/cert/
+    echo "Certificate files have been removed."
+
+    if [ -d "/root/.acme.sh/" ]; then
+        # 询问用户是否需要撤销证书
+        read -p "Do you want to revoke all certificates? (y/N): " revoke_confirm
+        if [[ $revoke_confirm =~ ^[Yy]$ ]]; then
+            # 获取所有证书域名
+            echo "Revoking and removing certificates..."
+            for domain_path in /root/.acme.sh/*; do
+                domain=$(basename "$domain_path")
+                # 检查是否为ECC证书
+                if [ -d "${domain_path}_ecc" ]; then
+                    echo "Revoking ECC certificate for $domain..."
+                    ~/.acme.sh/acme.sh --revoke -d "$domain" --ecc
+                    ~/.acme.sh/acme.sh --remove -d "$domain" --ecc
+                fi
+                if [ -d "$domain_path" ] && [ ! "$domain_path" = *"_ecc" ]; then
+                    echo "Revoking certificate for $domain..."
+                    ~/.acme.sh/acme.sh --revoke -d "$domain"
+                    ~/.acme.sh/acme.sh --remove -d "$domain"
+                fi
+            done
+            echo "All certificates have been revoked and removed."
+        else
+            echo "Skipping certificate revocation."
+        fi
+
+        # 删除acme.sh目录
+        echo "Removing acme.sh directory..."
+        rm -rf /root/.acme.sh/
+        echo "acme.sh directory has been removed."
+    else
+        echo "acme.sh directory not found. Skipping removal."
+    fi
+
     msg ok "Tuic has been decommissioned."
 }
+
 
 run() {
     if systemctl is-active --quiet tuic; then
